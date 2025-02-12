@@ -226,13 +226,27 @@ class SimpleRpMenuService extends Component
             $title = $menuItemName;
         }
 
-        $current_active_url = Craft::$app->request->getServerName() . Craft::$app->request->getUrl();
+        $current_active_url = Craft::$app->request->getUrl();
+        $current_active_segments = explode('/', trim($current_active_url, '/'));
+
         if ($current_active_url != '' && $menu_item_url != '') {
-            $menu_item_url_filtered = preg_replace('#^https?://#', '', $menu_item_url);
-            $current_active_url = preg_replace('/\?.*/', '', $current_active_url); // Remove query string
-            if ( $current_active_url == $menu_item_url_filtered ) {
+            $menu_item_url_filtered = parse_url($menu_item_url, PHP_URL_PATH);
+            $current_active_url = parse_url($current_active_url, PHP_URL_PATH);
+
+            $menu_segments = explode('/', trim($menu_item_url_filtered, '/'));
+
+            if ( $current_active_url == $menu_item_url_filtered || strpos($current_active_url, $menu_item_url_filtered) === 0) {
                 $menu_class .= ' active';
                 $menu_item_class .= ' current-menu-item';
+            }
+
+            if (count($current_active_segments) > 1) {
+                $parent_segment = $current_active_segments[0];
+        
+                if (!empty($menu_segments) && $menu_segments[0] == $parent_segment) {
+                    $menu_class .= ' parent-active';
+                    $menu_item_class .= ' current-parent-menu';
+                }
             }
         }
         $menu_item_class .= isset($menu_item['children'])?' dropdown':'';
@@ -240,7 +254,7 @@ class SimpleRpMenuService extends Component
         $localHTML .= '<li id="menu-item-' .$menu_item['id']. '" class="' .$menu_item_class. '">';
 
         if ($menu_item_url) {
-            $localHTML .= '<a class="nav-link '. $menu_class. '" target="'. $target .'" title="' .$title. '" href="' .$menu_item_url. '"' .$data_attributes. '>' . $menuItemName . '</a>';
+            $localHTML .= '<a class="nav-link '. $menu_class .'" target="'. $target .'" title="' .$title. '" href="' .$menu_item_url. '"' .$data_attributes. '>' . $menuItemName . '</a>';
         } else {
             $localHTML .= '<span class="'. $menu_class. '"' .$data_attributes. ' title="' .$title. '">' . $menuItemName . '</span>';
         }
